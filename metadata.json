@@ -1,0 +1,5 @@
+{
+  "name": "Project Management Pro",
+  "description": "A comprehensive project management dashboard with CRUD for projects, clients, collaborators, products, and services, including financial reports and billing.",
+  "requestFramePermissions": []
+}
