@@ -10,17 +10,12 @@ import {
   FileBarChart, 
   Receipt,
   Plus,
-  Pencil,
-  Trash2,
   Search,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  ArrowRightLeft
+  ChevronDown
 } from 'lucide-react';
 import { 
   Project, Client, Collaborator, Product, Service, 
-  Status, ProductApplication, ProjectPayment 
+  ProductApplication, ProjectPayment 
 } from './types';
 
 // Components
@@ -46,31 +41,52 @@ const TABS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [showQuickAction, setShowQuickAction] = useState(false);
   
-  // State initialization with some dummy data for demonstration
-  const [projects, setProjects] = useState<Project[]>([
-    { id: 1, description: 'Website E-commerce', startDate: '2023-10-01', endDate: '2023-12-01', clientId: 1, status: 'Em Progresso', value: 15000 },
-    { id: 2, description: 'Mobile App Delivery', startDate: '2023-11-15', endDate: '2024-02-15', clientId: 2, status: 'Pendente', value: 25000 }
-  ]);
+  // State initialization with persistence
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const saved = localStorage.getItem('pm_projects');
+    return saved ? JSON.parse(saved) : [];
+  });
   
-  const [clients, setClients] = useState<Client[]>([
-    { id: 1, name: 'João Silva', company: 'Tech Solutions', email: 'joao@tech.com', phone: '(11) 98888-7777' },
-    { id: 2, name: 'Maria Souza', company: 'Green Garden', email: 'maria@garden.com', phone: '(11) 97777-6666' }
-  ]);
+  const [clients, setClients] = useState<Client[]>(() => {
+    const saved = localStorage.getItem('pm_clients');
+    return saved ? JSON.parse(saved) : [];
+  });
   
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([
-    { id: 1, name: 'Carlos Tech', position: 'Developer', email: 'carlos@work.com' },
-    { id: 2, name: 'Ana Design', position: 'UI Designer', email: 'ana@work.com' }
-  ]);
+  const [collaborators, setCollaborators] = useState<Collaborator[]>(() => {
+    const saved = localStorage.getItem('pm_collaborators');
+    return saved ? JSON.parse(saved) : [];
+  });
   
-  const [products, setProducts] = useState<Product[]>([
-    { id: 1, name: 'Servidor VPS', description: 'Hospedagem mensal', price: 200, stock: 50 },
-    { id: 2, name: 'Certificado SSL', description: 'Segurança web', price: 100, stock: 10 }
-  ]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('pm_products');
+    return saved ? JSON.parse(saved) : [];
+  });
   
-  const [services, setServices] = useState<Service[]>([]);
-  const [appliedProducts, setAppliedProducts] = useState<ProductApplication[]>([]);
-  const [payments, setPayments] = useState<ProjectPayment[]>([]);
+  const [services, setServices] = useState<Service[]>(() => {
+    const saved = localStorage.getItem('pm_services');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [appliedProducts, setAppliedProducts] = useState<ProductApplication[]>(() => {
+    const saved = localStorage.getItem('pm_applied_products');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [payments, setPayments] = useState<ProjectPayment[]>(() => {
+    const saved = localStorage.getItem('pm_payments');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Persistence effects
+  useEffect(() => { localStorage.setItem('pm_projects', JSON.stringify(projects)); }, [projects]);
+  useEffect(() => { localStorage.setItem('pm_clients', JSON.stringify(clients)); }, [clients]);
+  useEffect(() => { localStorage.setItem('pm_collaborators', JSON.stringify(collaborators)); }, [collaborators]);
+  useEffect(() => { localStorage.setItem('pm_products', JSON.stringify(products)); }, [products]);
+  useEffect(() => { localStorage.setItem('pm_services', JSON.stringify(services)); }, [services]);
+  useEffect(() => { localStorage.setItem('pm_applied_products', JSON.stringify(appliedProducts)); }, [appliedProducts]);
+  useEffect(() => { localStorage.setItem('pm_payments', JSON.stringify(payments)); }, [payments]);
 
   const handleApplyProduct = (projectId: number, productId: number, quantity: number) => {
     const product = products.find(p => p.id === productId);
@@ -87,68 +103,28 @@ export default function App() {
       date: new Date().toISOString().split('T')[0]
     };
 
-    setAppliedProducts([...appliedProducts, newApplication]);
-    setProducts(products.map(p => p.id === productId ? { ...p, stock: p.stock - quantity } : p));
+    setAppliedProducts(prev => [...prev, newApplication]);
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: p.stock - quantity } : p));
   };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView 
-          projects={projects} 
-          services={services} 
-          clients={clients} 
-          collaborators={collaborators} 
-        />;
+        return <DashboardView projects={projects} services={services} clients={clients} collaborators={collaborators} />;
       case 'projects':
-        return <ProjectsView 
-          projects={projects} 
-          setProjects={setProjects} 
-          clients={clients} 
-        />;
+        return <ProjectsView projects={projects} setProjects={setProjects} clients={clients} />;
       case 'clients':
-        return <ClientsView 
-          clients={clients} 
-          setClients={setClients} 
-        />;
+        return <ClientsView clients={clients} setClients={setClients} />;
       case 'collaborators':
-        return <CollaboratorsView 
-          collaborators={collaborators} 
-          setCollaborators={setCollaborators} 
-        />;
+        return <CollaboratorsView collaborators={collaborators} setCollaborators={setCollaborators} />;
       case 'products':
-        return <ProductsView 
-          products={products} 
-          setProducts={setProducts} 
-          projects={projects}
-          onApplyProduct={handleApplyProduct}
-        />;
+        return <ProductsView products={products} setProducts={setProducts} projects={projects} onApplyProduct={handleApplyProduct} />;
       case 'services':
-        return <ServicesView 
-          services={services} 
-          setServices={setServices} 
-          projects={projects} 
-          clients={clients} 
-          collaborators={collaborators} 
-        />;
+        return <ServicesView services={services} setServices={setServices} projects={projects} clients={clients} collaborators={collaborators} />;
       case 'reports':
-        return <ReportsView 
-          projects={projects} 
-          services={services} 
-          appliedProducts={appliedProducts} 
-          products={products}
-          collaborators={collaborators}
-          clients={clients}
-        />;
+        return <ReportsView projects={projects} services={services} appliedProducts={appliedProducts} products={products} collaborators={collaborators} clients={clients} />;
       case 'billing':
-        return <BillingView 
-          projects={projects} 
-          services={services} 
-          setServices={setServices}
-          payments={payments}
-          setPayments={setPayments}
-          clients={clients}
-        />;
+        return <BillingView projects={projects} services={services} setServices={setServices} payments={payments} setPayments={setPayments} clients={clients} />;
       default:
         return <div>Em breve...</div>;
     }
@@ -157,58 +133,86 @@ export default function App() {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col">
+      <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0">
         <div className="p-6 border-b border-slate-800">
           <h1 className="text-xl font-bold flex items-center gap-2">
-            <LayoutDashboard className="text-blue-400" />
-            PM Dashboard
+            <div className="bg-blue-600 p-1.5 rounded-lg">
+              <LayoutDashboard size={18} className="text-white" />
+            </div>
+            <span>PM Pro</span>
           </h1>
         </div>
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                activeTab === tab.id ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                activeTab === tab.id 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30 font-semibold' 
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              {tab.icon}
-              <span className="font-medium">{tab.label}</span>
+              <span className={activeTab === tab.id ? 'text-white' : ''}>{tab.icon}</span>
+              <span className="text-sm">{tab.label}</span>
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xs">
+        <div className="p-4 border-t border-slate-800 bg-slate-900/50 backdrop-blur-md">
+          <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/50">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-sm shadow-inner">
               AD
             </div>
-            <div className="text-sm">
-              <p className="font-medium">Admin User</p>
-              <p className="text-slate-500 text-xs">admin@pmsys.com</p>
+            <div className="text-xs overflow-hidden">
+              <p className="font-bold text-slate-100 truncate">Administrador</p>
+              <p className="text-slate-500 truncate">Painel de Gestão</p>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-8 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-800">
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-8 shrink-0 z-20 shadow-sm">
+          <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">
             {TABS.find(t => t.id === activeTab)?.label}
           </h2>
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
-              <Search size={20} />
-            </button>
-            <div className="h-6 w-px bg-slate-200" />
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-              <Plus size={18} />
-              Ação Rápida
-            </button>
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <button 
+                onClick={() => setShowQuickAction(!showQuickAction)}
+                className="bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
+              >
+                <Plus size={16} />
+                Novo Registro
+                <ChevronDown size={14} className={`transition-transform duration-300 ${showQuickAction ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showQuickAction && (
+                <>
+                  <div className="fixed inset-0" onClick={() => setShowQuickAction(false)}></div>
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 animate-in fade-in zoom-in slide-in-from-top-2 duration-200 z-50">
+                    <p className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Atalhos Rápidos</p>
+                    <button onClick={() => { setActiveTab('projects'); setShowQuickAction(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-indigo-50 rounded-xl flex items-center gap-3 text-slate-700 font-bold group transition-all">
+                      <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><FolderKanban size={14} /></div> Projeto
+                    </button>
+                    <button onClick={() => { setActiveTab('clients'); setShowQuickAction(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-teal-50 rounded-xl flex items-center gap-3 text-slate-700 font-bold group transition-all">
+                      <div className="p-1.5 bg-teal-100 rounded-lg text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-colors"><Users size={14} /></div> Cliente
+                    </button>
+                    <button onClick={() => { setActiveTab('services'); setShowQuickAction(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-cyan-50 rounded-xl flex items-center gap-3 text-slate-700 font-bold group transition-all">
+                      <div className="p-1.5 bg-cyan-100 rounded-lg text-cyan-600 group-hover:bg-cyan-600 group-hover:text-white transition-colors"><Wrench size={14} /></div> Serviço
+                    </button>
+                    <div className="my-2 border-t border-slate-100"></div>
+                    <button onClick={() => { setActiveTab('billing'); setShowQuickAction(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-orange-50 rounded-xl flex items-center gap-3 text-slate-700 font-bold group transition-all">
+                      <div className="p-1.5 bg-orange-100 rounded-lg text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors"><Receipt size={14} /></div> Cobrança
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-8">
           {renderContent()}
         </div>
       </main>
